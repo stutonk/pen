@@ -7,43 +7,6 @@ import (
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	const errFmt = "key generation failed: %v"
-
-	salt, err := FreshSalt()
-	if err != nil {
-		t.Fatalf(errFmt, err)
-	}
-
-	pass := []byte("password1234")
-
-	a := New(pass, salt)
-	if len(a) != 32 {
-		t.Fatalf("key has incorret length; want 32, got %d", len(a))
-	}
-
-	b := New(pass, salt)
-	if !reflect.DeepEqual(a, b) {
-		t.Fatal("same password/same salt combo generated different keys")
-	}
-
-	otherSalt, err := FreshSalt()
-	if err != nil {
-		t.Fatalf(errFmt, err)
-	}
-
-	c := New(pass, otherSalt)
-	if reflect.DeepEqual(b, c) {
-		t.Fatal("same password/different salt combo generated same key")
-	}
-
-	d := New([]byte("abc123"), otherSalt)
-	if reflect.DeepEqual(c, d) {
-		t.Fatal("different password/same salt combo generated same key")
-	}
-
-}
-
 func TestFreshSalt(t *testing.T) {
 	const errFmt = "salt generation failed: %v"
 	a, err := FreshSalt()
@@ -64,8 +27,33 @@ func TestFreshSalt(t *testing.T) {
 	}
 
 	rand.Reader = bytes.NewReader(nil)
-	_, err = FreshSalt()
-	if err == nil {
+	if _, err = FreshSalt(); err == nil {
 		t.Fatal("failed to return error with empty reader")
+	}
+}
+
+func TestNew(t *testing.T) {
+	salt, _ := FreshSalt()
+	pass := []byte("password1234")
+
+	a := New(pass, salt)
+	if len(a) != 32 {
+		t.Fatalf("key has incorret length; want 32, got %d", len(a))
+	}
+
+	b := New(pass, salt)
+	if !reflect.DeepEqual(*a, *b) {
+		t.Fatal("same password/same salt combo generated different keys")
+	}
+
+	otherSalt, _ := FreshSalt()
+	c := New(pass, otherSalt)
+	if reflect.DeepEqual(*b, *c) {
+		t.Fatal("same password/different salt combo generated same key")
+	}
+
+	d := New([]byte("abc123"), otherSalt)
+	if reflect.DeepEqual(*c, *d) {
+		t.Fatal("different password/same salt combo generated same key")
 	}
 }
