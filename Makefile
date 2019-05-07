@@ -12,8 +12,8 @@ install: pen
 	install -m 644 pen.1 ${DESTDIR}${MANDIR}/man1
 
 uninstall:
-	rm ${DESTDIR}${BINDIR}/pen
-	rm ${DESTDIR}${MANDIR}/man1/pen.1
+	rm -f ${DESTDIR}${BINDIR}/pen
+	rm -f ${DESTDIR}${MANDIR}/man1/pen.1
 
 clean:
 	rm -f pen
