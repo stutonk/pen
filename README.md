@@ -1,8 +1,10 @@
-#### for unixes
+### for unixes
 `make && make install`
 
-#### everybody else
+### everybody else
 `go build` and do what ye will with it
+
+### --help
 
 ```
 pen(1)                           USER COMMANDS                          pen(1)
