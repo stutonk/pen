@@ -1,7 +1,7 @@
 /*
-Package boxutil implements streaming versions of the functions in
-nacl/secretbox as well as utility functions for generating suitable secret
-keys from password strings
+Package boxutil implements functions which en/decrypt chunks of data read
+from an input stream and write the result to an output stream. There is
+also a utility which generates keys suitable for use with these functions.
 */
 package boxutil
 
@@ -23,15 +23,15 @@ const (
 	passes    = 1
 )
 
-// ErrIncorrectKey should be used when an Open operation is attempted with
-// the wrong key
+// ErrIncorrectKey is triggered when an Open operation is attempted with the
+// wrong key
 var ErrIncorrectKey = errors.New("incorrect key")
 
 type functor func(*[]byte) (*[]byte, error)
 
-// gen is the first stage of a concurrent pipeline. It reads
-// chunkSize-sized byte slices from the Reader (or however much is left)
-// and sends them down the pipeline
+// gen is the first stage of a concurrent pipeline. It reads byte slices of
+// a fixed size (16KiB or however much is left) from the Reader and sends
+// them down the pipeline
 func gen(in io.Reader, size int, e chan<- error) <-chan *[]byte {
 	if size < 1 {
 		return nil
@@ -62,7 +62,7 @@ func gen(in io.Reader, size int, e chan<- error) <-chan *[]byte {
 OpenStream applies secretbox.Open to an io.Reader stream of []byte chunks
 and writes them to an io.Writer stream. Each chunk should begin with the
 nonce used to seal the chunk. If this function returns an error, the data
-written to the output stream should be considered corrupted and discarded.
+written to the output stream should be considered corrupt and be discarded.
 */
 func OpenStream(r io.Reader, w io.Writer, key *[keyLen]byte) error {
 	e := make(chan error)
@@ -100,7 +100,7 @@ SealStream applies secretbox.Seal to an io.Reader stream of []byte chunks
 and writes them to an io.Writer stream. Each resulting chunk will be
 prepended with the nonce used in its creation and will additionally be
 secretbox.Overhead bytes longer. If this function returns a non-nil error,
-the data written to the output stream should be considered corrupted and
+the data written to the output stream should be considered corrupt and be
 discarded.
 */
 func SealStream(r io.Reader, w io.Writer, key *[keyLen]byte) error {
@@ -124,9 +124,9 @@ func SealStream(r io.Reader, w io.Writer, key *[keyLen]byte) error {
 }
 
 // work is the middle stage of a concurrent pipeline. It applies a
-// transformation function f to incoming data and passes it down the pile.
-// Errors upstream should close their send channel so this goroutine will
-// terminate.
+// transformation function f to incoming data and passes it down the
+// pipeline. Errors upstream should close their send channel so this
+// goroutine will terminate.
 func work(in <-chan *[]byte, f functor, e chan<- error) <-chan *[]byte {
 
 	out := make(chan *[]byte)
