@@ -12,12 +12,7 @@ sed '/CONTENT/ {
     r '${TMP}'
     d
 }' <${HTML_IN}>${HTML_OUT}
-sed '/CONTENT/ {
-    r '${TMP}'
-    d
-}' <${MD_IN}>${MD_OUT}
 
 [ -e ${TMP} ] && rm ${TMP}
 
 mv ${HTML_OUT} ../docs
-mv ${MD_OUT} ..
