@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 
 	flag "github.com/spf13/pflag"
@@ -21,7 +22,7 @@ const (
 	saltLen         = 128
 	usageFmt        = "usage: %v [-hv] file [files...]\n\n"
 	verFmt          = "%v version %v\n"
-	version         = "1.0.0"
+	version         = "1.0.1"
 )
 
 var (
@@ -67,7 +68,7 @@ the MAJOR and MINOR elements of a semver version number.
 
 The header format for .pen files is:
 	magic   uint32
-	version [5]byte
+	version [5]byte (currently unused)
 	salt    [128]byte
 */
 func main() {
@@ -83,7 +84,7 @@ func main() {
 		return
 	}
 
-	pass := promptForPass()
+	pass := promptForPass("Enter password: ")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -91,11 +92,12 @@ func main() {
 			case fileErr:
 				fmt.Printf(errFmt, appName, err.File, err.Err)
 			default:
-				fmt.Printf("%v: fatal; %v", appName, err)
+				fmt.Printf("%v: fatal; %v\n", appName, err)
 			}
 		}
 	}()
 
+	var confirmed bool
 	for _, fileName := range flag.Args() {
 		in, err := os.Open(fileName)
 		if err != nil {
@@ -121,19 +123,17 @@ func main() {
 			case binary.BigEndian.Uint32(header[:4]) != magic:
 				panic(fileErr{fileName, fmt.Errorf("wrong magic number in header")})
 			}
-			fileVer, err := strconv.ParseFloat(string(header[4:7]), 64)
-			if err != nil {
-				panic(fileErr{fileName, fmt.Errorf("corrupt version in header")})
-			} else if verValue < fileVer {
-				panic(fileErr{
-					fileName,
-					fmt.Errorf("need program version >= %.1f", fileVer),
-				})
-			}
 			copy(salt, header[4+len(version):])
 			op = boxutil.OpenStream
 			outName = fileName[:len(fileName)-4]
 		} else {
+			if !confirmed {
+				repeat := promptForPass("Enter password (repeat): ")
+				if !reflect.DeepEqual(repeat, pass) {
+					panic(fmt.Errorf("passwords don't match"))
+				}
+				confirmed = true
+			}
 			if _, err := rand.Read(salt); err != nil {
 				panic(fileErr{fileName, err})
 			}
@@ -167,7 +167,7 @@ func main() {
 	}
 }
 
-func promptForPass() []byte {
+func promptForPass(msg string) []byte {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("%v: fatal; %v", appName, r)
@@ -182,7 +182,7 @@ func promptForPass() []byte {
 		terminal.Restore(0, oldState)
 		fmt.Println()
 	}()
-	fmt.Print("enter password: ")
+	fmt.Print(msg)
 	pass, err := terminal.ReadPassword(0)
 	if err != nil {
 		panic(err)
