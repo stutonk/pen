@@ -2,15 +2,18 @@ pen
 ===
 Pen is a lightweight alternatve to PGP for securely encrypting files; it uses
 the Argon2 algorithm for key-stretching passwords and NaCl's secretbox for
-data encryption. If a filename ends in '.pen', it will be decrypted rather
+data encryption. If a filename ends in `.pen`, it will be decrypted rather
 than encrypted. Upon successful encryption or decryption, the original file
 or .pen file, respectively, is removed.
+
+### release binaries
+are available [here](https://github.com/stutonk/pen/releases) for amd64/all major OSes
 
 ### for unixes
 `make && make install`
 
 ### everybody else
-`go build` and do what ye will with it
+`go build` and do with it what ye will
 
 ### note
 Pen, like almost any lock, will only stop honest people. Due to the nature
