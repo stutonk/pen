@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	flag "github.com/spf13/pflag"
-	"github.com/stutonk/pen/boxutil"
+	"github.com/stutonk/boxutil"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
