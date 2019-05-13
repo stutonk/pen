@@ -89,9 +89,9 @@ func main() {
 		if r := recover(); r != nil {
 			switch err := r.(type) {
 			case fileErr:
-				fmt.Printf(errFmt, appName, err.File, err.Err)
+				fmt.Fprintf(os.Stderr, errFmt, appName, err.File, err.Err)
 			default:
-				fmt.Printf("%v: fatal; %v\n", appName, err)
+				fmt.Fprintf(os.Stderr, "%v: fatal; %v\n", appName, err)
 			}
 		}
 	}()
