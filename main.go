@@ -18,17 +18,17 @@ import (
 const (
 	cryptExt        = ".pen"
 	errFmt          = "%v: (%v) fatal; %v\n"
-	magic    uint32 = 0x1c0ffee9
-	saltLen         = 128
-	usageFmt        = "usage: %v [-hv] file [files...]\n\n"
+	magic    uint32 = 0xc0ffee11
+	saltLen  uint32 = 128
+	usageFmt        = "usage: %v [-h, -v] file [files...]\nOptions are:\n"
 	verFmt          = "%v version %v\n"
-	version         = "1.0.1"
+	version         = "1.1.0"
 )
 
 var (
 	appName     = os.Args[0]
-	headerLen   = 4 + len(version) + saltLen
 	helpFlag    bool
+	order       = binary.BigEndian
 	verFlag     bool
 	verValue, _ = strconv.ParseFloat(version[:3], 64)
 )
@@ -63,13 +63,12 @@ func init() {
 
 /*
 Decryption is attempted when a file has a .pen extension, otherwise the
-file is encrypted. Version compatibility is tested (as a float64) against
-the MAJOR and MINOR elements of a semver version number.
+file is encrypted.
 
 The header format for .pen files is:
 	magic   uint32
-	version [5]byte (currently unused)
-	salt    [128]byte
+	saltLen uint32
+	salt    [saltLen]byte
 */
 func main() {
 	switch {
@@ -105,25 +104,34 @@ func main() {
 		}
 		defer in.Close()
 
-		salt := make([]byte, saltLen)
 		var (
 			op          func(io.Reader, io.Writer, *[32]byte) error
 			outName     string
+			salt        []byte
 			writeHeader bool
 		)
 
 		if filepath.Ext(fileName) == cryptExt {
-			header := make([]byte, headerLen)
-			n, err := in.Read(header)
-			switch {
-			case err != nil && err != io.EOF:
+			var (
+				hMagic   uint32
+				hSaltLen uint32
+			)
+			if err := binary.Read(in, order, &hMagic); err != nil {
 				panic(fileErr{fileName, err})
-			case n != headerLen:
-				panic(fileErr{fileName, fmt.Errorf("invalid .pen file length")})
-			case binary.BigEndian.Uint32(header[:4]) != magic:
-				panic(fileErr{fileName, fmt.Errorf("wrong magic number in header")})
 			}
-			copy(salt, header[4+len(version):])
+			if hMagic != magic {
+				panic(fileErr{
+					fileName,
+					fmt.Errorf("wrong magic number in header"),
+				})
+			}
+			if err := binary.Read(in, order, &hSaltLen); err != nil {
+				panic(fileErr{fileName, err})
+			}
+			salt = make([]byte, hSaltLen)
+			if _, err := in.Read(salt); err != nil {
+				panic(fileErr{fileName, err})
+			}
 			op = boxutil.OpenStream
 			outName = fileName[:len(fileName)-4]
 		} else {
@@ -134,6 +142,7 @@ func main() {
 				}
 				confirmed = true
 			}
+			salt = make([]byte, saltLen)
 			if _, err := rand.Read(salt); err != nil {
 				panic(fileErr{fileName, err})
 			}
@@ -150,8 +159,8 @@ func main() {
 		defer out.Close()
 
 		if writeHeader {
-			binary.Write(out, binary.BigEndian, magic)
-			out.Write([]byte(version))
+			binary.Write(out, order, magic)
+			binary.Write(out, order, saltLen)
 			out.Write(salt)
 		}
 
