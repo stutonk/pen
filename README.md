@@ -1,3 +1,4 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/stutonk/pen)](https://goreportcard.com/report/github.com/stutonk/pen)  
 pen
 ===
 Pen is a lightweight alternatve to PGP for securely encrypting files; it uses
