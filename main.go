@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 
 	flag "github.com/spf13/pflag"
 	"github.com/stutonk/boxutil"
@@ -22,15 +21,14 @@ const (
 	saltLen  uint32 = 128
 	usageFmt        = "usage: %v [-h, -v] file [files...]\nOptions are:\n"
 	verFmt          = "%v version %v\n"
-	version         = "1.1.0"
+	version         = "1.1.1"
 )
 
 var (
-	appName     = os.Args[0]
-	helpFlag    bool
-	order       = binary.BigEndian
-	verFlag     bool
-	verValue, _ = strconv.ParseFloat(version[:3], 64)
+	appName  = os.Args[0]
+	helpFlag bool
+	order    = binary.BigEndian
+	verFlag  bool
 )
 
 type fileErr struct {
@@ -52,9 +50,10 @@ func init() {
 		false,
 		"display this help and exit",
 	)
-	flag.BoolVar(
+	flag.BoolVarP(
 		&verFlag,
 		"version",
+		"v",
 		false,
 		"output version information and exit",
 	)
