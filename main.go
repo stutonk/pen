@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 
@@ -21,7 +22,7 @@ const (
 	saltLen  uint32 = 128
 	usageFmt        = "usage: %v [-h, -v] file [files...]\nOptions are:\n"
 	verFmt          = "%v version %v\n"
-	version         = "1.1.1"
+	version         = "1.2.1"
 )
 
 var (
@@ -164,14 +165,30 @@ func main() {
 		}
 
 		if err = op(in, out, key); err != nil {
-			defer os.Remove(outName)
+			defer maybeSecDel(outName)
 			panic(fileErr{fileName, err})
 		}
 
-		if err = os.Remove(fileName); err != nil {
-			defer os.Remove(outName)
-			panic(fileErr{fileName, err})
+		maybeSecDel(fileName)
+	}
+}
+
+func maybeSecDel(fileName string) {
+	if path, err := exec.LookPath("shred"); err == nil {
+		cmd := exec.Command(path, "-u", fileName)
+		if err := cmd.Run(); err != nil {
+			fmt.Printf(
+				"%v: warn; `shred` returned err; %v not deleted\n",
+				appName,
+				fileName,
+			)
 		}
+	} else {
+		fmt.Printf(
+			"%v: warn; `shred` not found; %v not deleted\n",
+			appName,
+			fileName,
+		)
 	}
 }
 
