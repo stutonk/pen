@@ -22,7 +22,7 @@ const (
 	saltLen  uint32 = 128
 	usageFmt        = "usage: %v [-h, -v] file [files...]\nOptions are:\n"
 	verFmt          = "%v version %v\n"
-	version         = "1.2.1"
+	version         = "1.2.0"
 )
 
 var (
